@@ -14,21 +14,31 @@ HTML_TEMPLATE = """
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .container { background: #1e293b; padding: 30px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; border: 1px solid #334155; }
-        h1 { font-size: 24px; margin-bottom: 8px; color: #38bdf8; font-weight: 700; }
-        p.subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 24px; }
-        .input-group { margin-bottom: 16px; text-align: left; }
-        label { display: block; font-size: 13px; margin-bottom: 6px; color: #cbd5e1; }
-        input[type="text"], select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 14px; outline: none; transition: 0.2s; }
+        .container { background: #1e293b; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; border: 1px solid #334155; }
+        h1 { font-size: 22px; margin-bottom: 5px; color: #38bdf8; font-weight: 700; }
+        p.subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+        
+        /* Khung video mẫu */
+        .demo-box { margin-bottom: 20px; background: #0f172a; padding: 12px; border-radius: 12px; border: 1px dashed #475569; }
+        .demo-title { font-size: 11px; color: #38bdf8; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
+        video { width: 100%; max-height: 180px; border-radius: 8px; background: #000; outline: none; }
+
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; font-size: 12px; margin-bottom: 5px; color: #cbd5e1; }
+        input[type="text"], select { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 13px; outline: none; transition: 0.2s; }
         input[type="text"]:focus, select:focus { border-color: #38bdf8; box-shadow: 0 0 5px rgba(56, 189, 248, 0.3); }
-        button { width: 100%; padding: 12px; background: linear-gradient(135deg, #0ea5e9, #2563eb); border: none; border-radius: 8px; color: white; font-size: 15px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        
+        button { width: 100%; padding: 12px; background: linear-gradient(135deg, #0ea5e9, #2563eb); border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 5px; }
         button:hover { opacity: 0.9; transform: translateY(-1px); }
-        .result { margin-top: 20px; text-align: left; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; display: none; }
-        .result h3 { font-size: 14px; color: #4ade80; margin-bottom: 8px; }
-        .result p { font-size: 12px; color: #cbd5e1; margin-bottom: 6px; word-break: break-all; }
-        .btn-download { display: inline-block; padding: 8px 16px; background: #22c55e; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600; margin-top: 10px; text-align: center; width: 100%; }
-        .loading { display: none; margin-top: 15px; color: #38bdf8; font-size: 13px; }
-        .footer { margin-top: 20px; font-size: 11px; color: #64748b; }
+        
+        .loading { display: none; margin-top: 15px; color: #38bdf8; font-size: 13px; font-weight: 600; }
+        .result { margin-top: 15px; text-align: left; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; display: none; }
+        .result h3 { font-size: 13px; color: #4ade80; margin-bottom: 6px; }
+        .result p { font-size: 11px; color: #cbd5e1; margin-bottom: 8px; word-break: break-all; }
+        
+        .btn-action { display: block; width: 100%; padding: 10px; background: #22c55e; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600; text-align: center; margin-top: 8px; }
+        
+        .footer { margin-top: 15px; font-size: 10px; color: #64748b; }
     </style>
 </head>
 <body>
@@ -36,6 +46,14 @@ HTML_TEMPLATE = """
         <h1>✨ SANAP WEB ✨</h1>
         <p class="subtitle">Bóc tách video TikTok không logo & MP3 siêu tốc</p>
         
+        <!-- Video Mẫu Trực Quan -->
+        <div class="demo-box">
+            <div class="demo-title">🔥 Video Mẫu (Đã Bóc Sạch Logo ID)</div>
+            <video controls autoplay muted loop playsinline>
+                <source src="https://v16-webapp-prime.us.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/o8AIEFIDbE9ffL3YfAQAeIA21mQzIfE7DIBgE/?a=1988&ch=0&cr=0&dr=0&lr=unwatermarked&cd=0|0|1|0&cv=1&br=2564&bt=1282&cs=0&ds=6&ft=4fUEKM8q8Zmo01x04_4jV~cWlpWrKsd.&mime_type=video_mp4&qs=0&rc=OTZlZTc3ZzVpPDw5aWZAZUBpM2Zoc3U5cm1sdTMzZjczM0AtLjItMmFhXjExNDE1YmNgYSNxLW1ecjRfLXNgLS1kMWNzcw%3D%3D&btag=e00090000&expire=1716380000&l=20240520&ply_type=2&policy=3&rt=W2" type="video/mp4">
+            </video>
+        </div>
+
         <div class="input-group">
             <label>👉 Dán Link TikTok:</label>
             <input type="text" id="url" placeholder="https://www.tiktok.com/@...">
@@ -45,21 +63,21 @@ HTML_TEMPLATE = """
             <label>👉 Chọn định dạng:</label>
             <select id="type">
                 <option value="mp4">🎬 Tải Video MP4 (Không Logo)</option>
-                <option value="mp3">🎵 Tải Nhạc Nền MP3 (Audio)</option>
+                <option value="mp3">🎵 Tải Nhạc Nền MP3 (Audio gốc)</option>
             </select>
         </div>
 
-        <button onclick="processSanap()">🚀 TẢI NGAY</button>
+        <button onclick="processSanap()">🚀 BÓC TÁCH & TẢI VỀ</button>
         
-        <div class="loading" id="loading">⏳ Sanap đang xử lý, chờ chút nha đại boss...</div>
+        <div class="loading" id="loading">⏳ Sanap đang xử lý hệ thống, chờ chút nha đại boss...</div>
 
         <div class="result" id="resultBox">
             <h3 id="resAuthor"></h3>
-            <p><b>Tiêu đề:</b> <span id="resTitle"></span></p>
-            <a id="resLink" href="#" target="_blank" class="btn-download">📥 Bấm vào đây để tải file</a>
+            <p><b>Nội dung:</b> <span id="resTitle"></span></p>
+            <a id="downloadBtn" href="#" target="_blank" class="btn-action">📥 Bấm Tải Trực Tiếp Về Máy</a>
         </div>
 
-        <div class="footer">Created by ThienVN • Sanap Pro v6.0</div>
+        <div class="footer">Created by ThienVN • Sanap Pro v8.0 Ultimate</div>
     </div>
 
     <script>
@@ -90,10 +108,21 @@ HTML_TEMPLATE = """
                 if (data.success) {
                     document.getElementById('resAuthor').innerText = "✔ Tác giả: " + data.author;
                     document.getElementById('resTitle').innerText = data.title;
-                    let downloadBtn = document.getElementById('resLink');
-                    downloadBtn.href = data.download_url;
-                    downloadBtn.innerText = type === 'mp4' ? "📥 Tải Video MP4 Về Máy" : "📥 Tải Nhạc MP3 Về Máy";
+                    
+                    let btn = document.getElementById('downloadBtn');
+                    btn.href = data.download_url;
+                    btn.download = type === 'mp4' ? 'Sanap_Video.mp4' : 'Sanap_Audio.mp3';
+                    
                     resultBox.style.display = 'block';
+
+                    // Tự động kích hoạt tải ngầm về thư mục Download của điện thoại
+                    let a = document.createElement('a');
+                    a.href = data.download_url;
+                    a.setAttribute('download', '');
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
                 } else {
                     alert("❌ Lỗi: " + data.message);
                 }
@@ -155,4 +184,4 @@ def api_download():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-  
+    
