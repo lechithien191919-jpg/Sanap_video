@@ -11,14 +11,14 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANAP - Tải TikTok Không Logo VIP</title>
+    <title>SANAP VIP - Tải Video Đa Năng (TikTok, YouTube, Douyin)</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #090d16; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
         .container { background: #131c2e; padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); width: 100%; max-width: 450px; text-align: center; border: 1px solid #1e293b; }
         
-        .logo-area h1 { font-size: 24px; color: #38bdf8; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .logo-area p { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+        .logo-area h1 { font-size: 22px; color: #38bdf8; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .logo-area p { font-size: 11px; color: #94a3b8; margin-bottom: 20px; }
 
         /* Menu chọn định dạng VIP */
         .menu-grid { display: flex; gap: 10px; margin-bottom: 15px; }
@@ -33,7 +33,7 @@ HTML_TEMPLATE = """
         .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #0ea5e9, #2563eb); border: none; border-radius: 10px; color: white; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); margin-top: 5px; }
         .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
 
-        /* Khung hiển thị tiến trình chi tiết */
+        /* Khung hiển thị tiến trình */
         .progress-box { margin-top: 20px; background: #090d16; padding: 15px; border-radius: 12px; border: 1px solid #1e293b; text-align: left; display: none; }
         .progress-step { font-size: 12px; color: #38bdf8; margin-bottom: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .media-info { font-size: 11px; color: #cbd5e1; margin-top: 6px; word-break: break-all; border-top: 1px dashed #1e293b; padding-top: 8px; }
@@ -44,25 +44,26 @@ HTML_TEMPLATE = """
 <body>
     <div class="container">
         <div class="logo-area">
-            <h1>✨ SANAP VIP ✨</h1>
-            <p>Bóc tách video TikTok không logo phong cách SnapTik</p>
+            <h1>✨ SANAP MULTI VIP ✨</h1>
+            <p>Hỗ trợ TikTok, YouTube & Douyin không logo</p>
         </div>
 
         <div class="input-group">
-            <label>👉 Dán Link TikTok vào đây:</label>
-            <input type="text" id="url" placeholder="https://www.tiktok.com/@...">
+            <label>👉 Dán Link Video vào đây:</label>
+            <input type="text" id="url" placeholder="TikTok, YouTube hoặc Douyin...">
         </div>
 
         <div class="input-group">
             <label>👉 Chọn định dạng muốn tải:</label>
             <div class="menu-grid">
-                <div class="menu-btn active" id="btn-mp4" onclick="selectType('mp4')">🎬 Video MP4<br><span style="font-size:10px; opacity:0.7;">Không logo id</span></div>
+                <div class="menu-btn active" id="btn-mp4" onclick="selectType('mp4')">🎬 Video MP4<br><span style="font-size:10px; opacity:0.7;">Chất lượng cao</span></div>
                 <div class="menu-btn" id="btn-mp3" onclick="selectType('mp3')">🎵 Nhạc MP3<br><span style="font-size:10px; opacity:0.7;">Audio gốc</span></div>
             </div>
         </div>
 
         <button class="btn-submit" onclick="processSanap()">🚀 BẮT ĐẦU TẢI NGAY</button>
         
+        <!-- Khung hiển thị tiến trình -->
         <div class="progress-box" id="progressBox">
             <div class="progress-step" id="stepText">⏳ Đang khởi tạo hệ thống...</div>
             <div class="media-info" id="mediaDetails"></div>
@@ -98,9 +99,8 @@ HTML_TEMPLATE = """
 
             progressBox.style.display = 'block';
             
-            // Bước 1: Đang kết nối
-            stepText.innerHTML = "🔗 Bước 1/3: Đang kết nối trạm trung chuyển...";
-            mediaDetails.innerHTML = "Đang xác thực đường dẫn TikTok...";
+            stepText.innerHTML = "🔗 Bước 1/3: Đang kết nối trạm trung chuyển đa năng...";
+            mediaDetails.innerHTML = "Đang nhận diện nguồn video...";
 
             try {
                 let response = await fetch('/api/download', {
@@ -111,12 +111,10 @@ HTML_TEMPLATE = """
                 let data = await response.json();
 
                 if (data.success) {
-                    // Bước 2: Bóc tách thành công
-                    stepText.innerHTML = "🔍 Bước 2/3: Đã bóc tách sạch logo ID!";
-                    mediaDetails.innerHTML = `<b>Tác giả:</b> ${data.author}<br><b>Tên file:</b> ${data.filename}`;
+                    stepText.innerHTML = "🔍 Bước 2/3: Đã bóc tách dữ liệu thành công!";
+                    mediaDetails.innerHTML = `<b>Nền tảng:</b> ${data.platform}<br><b>Tiêu đề:</b> ${data.title}`;
 
                     setTimeout(() => {
-                        // Bước 3: Tải file về máy với tên chuẩn sanap_[id]
                         stepText.innerHTML = `📥 Bước 3/3: Đang tự động tải file "${data.filename}" về máy...`;
                         
                         let a = document.createElement('a');
@@ -127,7 +125,7 @@ HTML_TEMPLATE = """
                         document.body.removeChild(a);
 
                         setTimeout(() => {
-                            stepText.innerHTML = "🎉 Hoàn tất! File đã được tải về máy thành công.";
+                            stepText.innerHTML = "🎉 Hoàn tất! Kiểm tra thư mục tải xuống nhé ông ơi.";
                         }, 1500);
 
                     }, 1000);
@@ -156,46 +154,60 @@ def api_download():
     url = req_data.get('url')
     file_type = req_data.get('type')
 
+    # Sử dụng Cobalt API (hoặc dịch vụ hỗ trợ đa nền tảng tối ưu cho TikTok, YouTube, Douyin)
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json, text/javascript, */*; q=0.01',
-        'Referer': 'https://tikwm.com/'
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+    }
+    
+    payload = {
+        "url": url,
+        "videoQuality": "max",
+        "audioFormat": "mp3" if file_type == 'mp3' else "best"
     }
 
     try:
-        api_url = f"https://tikwm.com/api/?url={url}&hd=1"
-        response = requests.get(api_url, headers=headers, timeout=12)
-        data = response.json()
+        # Gọi trạm trung chuyển API tổng hợp đa nền tảng công khai ổn định
+        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=15)
+        res_data = response.json()
 
-        if data.get("code") == 0:
-            video_info = data.get("data", {})
-            author = video_info.get("author", {}).get("nickname", "Unknown")
-            raw_title = video_info.get("title", "tiktok_media")
+        status = res_data.get("status")
+        
+        if status in ["stream", "redirect", "picker"]:
+            download_url = res_data.get("url")
             
-            # Tạo dãy số ngẫu nhiên phong cách SnapTik: sanap_[12 chữ số ngẫu nhiên]
-            random_id = ''.join([str(random.randint(0, 9)) for _ in range(12)])
+            # Nếu trả về dạng chọn nhiều phân vùng (picker)
+            if status == "picker" and res_data.get("picker"):
+                download_url = res_data["picker"][0].get("url")
 
-            if file_type == 'mp3':
-                download_url = video_info.get("music")
-                filename = f"sanap_{random_id}.mp3"
-            else:
-                download_url = video_info.get("hdplay") or video_info.get("play")
-                filename = f"sanap_{random_id}.mp4"
+            random_id = ''.join([str(random.randint(0, 9)) for _ in range(10)] )
+            ext = "mp3" if file_type == 'mp3' else "mp4"
+            filename = f"sanap_{random_id}.{ext}"
+            
+            # Nhận diện nền tảng dựa vào link
+            platform = "TikTok / Douyin"
+            if "youtube.com" in url or "youtu.be" in url:
+                platform = "YouTube"
+            elif "douyin.com" in url:
+                platform = "Douyin"
 
             if not download_url:
-                return jsonify({'success': False, 'message': 'Không tìm thấy link tải từ máy chủ!'})
+                return jsonify({'success': False, 'message': 'Không tìm thấy liên kết tải trực tiếp!'})
 
             return jsonify({
                 'success': True,
-                'author': author,
-                'title': raw_title,
+                'platform': platform,
+                'title': res_data.get("filename", "Media content"),
                 'filename': filename,
                 'download_url': download_url
             })
         else:
-            return jsonify({'success': False, 'message': 'Link TikTok không hợp lệ hoặc đã bị xoá!'})
+            # Fallback nếu link không hợp lệ
+            return jsonify({'success': False, 'message': res_data.get('text', 'Đường dẫn không hợp lệ hoặc không hỗ trợ!')})
+            
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+        return jsonify({'success': False, 'message': f'Lỗi hệ thống: ' + str(e)})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
