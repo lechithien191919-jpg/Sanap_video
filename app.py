@@ -1,5 +1,5 @@
 import os
-import re
+import random
 import requests
 from flask import Flask, render_template_string, request, jsonify
 
@@ -45,7 +45,7 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="logo-area">
             <h1>✨ SANAP VIP ✨</h1>
-            <p>Bóc tách video TikTok không logo & tên chuẩn nội dung</p>
+            <p>Bóc tách video TikTok không logo phong cách SnapTik</p>
         </div>
 
         <div class="input-group">
@@ -63,7 +63,6 @@ HTML_TEMPLATE = """
 
         <button class="btn-submit" onclick="processSanap()">🚀 BẮT ĐẦU TẢI NGAY</button>
         
-        <!-- Khung hiển thị tiến trình -->
         <div class="progress-box" id="progressBox">
             <div class="progress-step" id="stepText">⏳ Đang khởi tạo hệ thống...</div>
             <div class="media-info" id="mediaDetails"></div>
@@ -114,10 +113,10 @@ HTML_TEMPLATE = """
                 if (data.success) {
                     // Bước 2: Bóc tách thành công
                     stepText.innerHTML = "🔍 Bước 2/3: Đã bóc tách sạch logo ID!";
-                    mediaDetails.innerHTML = `<b>Tác giả:</b> ${data.author}<br><b>Tên nội dung:</b> ${data.title}`;
+                    mediaDetails.innerHTML = `<b>Tác giả:</b> ${data.author}<br><b>Tên file:</b> ${data.filename}`;
 
                     setTimeout(() => {
-                        // Bước 3: Tải file về máy với tên chuẩn theo nội dung
+                        // Bước 3: Tải file về máy với tên chuẩn sanap_[id]
                         stepText.innerHTML = `📥 Bước 3/3: Đang tự động tải file "${data.filename}" về máy...`;
                         
                         let a = document.createElement('a');
@@ -128,7 +127,7 @@ HTML_TEMPLATE = """
                         document.body.removeChild(a);
 
                         setTimeout(() => {
-                            stepText.innerHTML = "🎉 Hoàn tất! Tên file đã được đặt theo tiêu đề video nhé ông ơi.";
+                            stepText.innerHTML = "🎉 Hoàn tất! File đã được tải về máy thành công.";
                         }, 1500);
 
                     }, 1000);
@@ -146,14 +145,6 @@ HTML_TEMPLATE = """
 </body>
 </html>
 """
-
-def clean_filename(text):
-    # Loại bỏ các ký tự hệ thống không cho phép đặt tên file
-    cleaned = re.sub(r'[\\/*?:"<>|]', "", text)
-    cleaned = cleaned.strip()
-    if len(cleaned) > 60:
-        cleaned = cleaned[:60]
-    return cleaned if cleaned else "Sanap_Media"
 
 @app.route('/')
 def index():
@@ -181,16 +172,15 @@ def api_download():
             author = video_info.get("author", {}).get("nickname", "Unknown")
             raw_title = video_info.get("title", "tiktok_media")
             
-            # Xử lý làm sạch tiêu đề để làm tên file chuẩn nội dung
-            safe_title = clean_filename(raw_title)
+            # Tạo dãy số ngẫu nhiên phong cách SnapTik: sanap_[12 chữ số ngẫu nhiên]
+            random_id = ''.join([str(random.randint(0, 9)) for _ in range(12)])
 
-            # Phân tách chính xác định dạng MP4 hay MP3 theo yêu cầu người dùng bấm
             if file_type == 'mp3':
                 download_url = video_info.get("music")
-                filename = f"{safe_title}.mp3"
+                filename = f"sanap_{random_id}.mp3"
             else:
                 download_url = video_info.get("hdplay") or video_info.get("play")
-                filename = f"{safe_title}.mp4"
+                filename = f"sanap_{random_id}.mp4"
 
             if not download_url:
                 return jsonify({'success': False, 'message': 'Không tìm thấy link tải từ máy chủ!'})
@@ -210,4 +200,4 @@ def api_download():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-            
+    
