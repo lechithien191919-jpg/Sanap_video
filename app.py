@@ -1,4 +1,5 @@
 import os
+import re
 import requests
 from flask import Flask, render_template_string, request, jsonify
 
@@ -13,128 +14,146 @@ HTML_TEMPLATE = """
     <title>SANAP - Tải TikTok Không Logo VIP</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
-        .container { background: #1e293b; padding: 25px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 450px; text-align: center; border: 1px solid #334155; }
-        h1 { font-size: 22px; margin-bottom: 5px; color: #38bdf8; font-weight: 700; }
-        p.subtitle { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+        body { background: #090d16; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
+        .container { background: #131c2e; padding: 25px; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); width: 100%; max-width: 450px; text-align: center; border: 1px solid #1e293b; }
         
-        /* Khung video mẫu */
-        .demo-box { margin-bottom: 20px; background: #0f172a; padding: 12px; border-radius: 12px; border: 1px dashed #475569; }
-        .demo-title { font-size: 11px; color: #38bdf8; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
-        video { width: 100%; max-height: 180px; border-radius: 8px; background: #000; outline: none; }
+        .logo-area h1 { font-size: 24px; color: #38bdf8; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .logo-area p { font-size: 12px; color: #94a3b8; margin-bottom: 20px; }
+
+        /* Menu chọn định dạng VIP */
+        .menu-grid { display: flex; gap: 10px; margin-bottom: 15px; }
+        .menu-btn { flex: 1; padding: 12px 10px; background: #1e293b; border: 2px solid #334155; border-radius: 12px; color: #94a3b8; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; text-align: center; }
+        .menu-btn.active { background: rgba(56, 189, 248, 0.1); border-color: #38bdf8; color: #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.2); }
 
         .input-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; font-size: 12px; margin-bottom: 5px; color: #cbd5e1; }
-        input[type="text"], select { width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 13px; outline: none; transition: 0.2s; }
-        input[type="text"]:focus, select:focus { border-color: #38bdf8; box-shadow: 0 0 5px rgba(56, 189, 248, 0.3); }
+        label { display: block; font-size: 12px; margin-bottom: 6px; color: #cbd5e1; font-weight: 500; }
+        input[type="text"] { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid #334155; background: #090d16; color: #fff; font-size: 14px; outline: none; transition: 0.2s; }
+        input[type="text"]:focus { border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3); }
         
-        button { width: 100%; padding: 12px; background: linear-gradient(135deg, #0ea5e9, #2563eb); border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; margin-top: 5px; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #0ea5e9, #2563eb); border: none; border-radius: 10px; color: white; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); margin-top: 5px; }
+        .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
+
+        /* Khung hiển thị tiến trình chi tiết */
+        .progress-box { margin-top: 20px; background: #090d16; padding: 15px; border-radius: 12px; border: 1px solid #1e293b; text-align: left; display: none; }
+        .progress-step { font-size: 12px; color: #38bdf8; margin-bottom: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+        .media-info { font-size: 11px; color: #cbd5e1; margin-top: 6px; word-break: break-all; border-top: 1px dashed #1e293b; padding-top: 8px; }
         
-        .loading { display: none; margin-top: 15px; color: #38bdf8; font-size: 13px; font-weight: 600; }
-        .result { margin-top: 15px; text-align: left; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; display: none; }
-        .result h3 { font-size: 13px; color: #4ade80; margin-bottom: 6px; }
-        .result p { font-size: 11px; color: #cbd5e1; margin-bottom: 8px; word-break: break-all; }
-        
-        .btn-action { display: block; width: 100%; padding: 10px; background: #22c55e; color: white; text-decoration: none; border-radius: 6px; font-size: 13px; font-weight: 600; text-align: center; margin-top: 8px; }
-        
-        .footer { margin-top: 15px; font-size: 10px; color: #64748b; }
+        .footer { margin-top: 20px; font-size: 11px; color: #64748b; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>✨ SANAP WEB ✨</h1>
-        <p class="subtitle">Bóc tách video TikTok không logo & MP3 siêu tốc</p>
-        
-        <!-- Video Mẫu Trực Quan -->
-        <div class="demo-box">
-            <div class="demo-title">🔥 Video Mẫu (Đã Bóc Sạch Logo ID)</div>
-            <video controls autoplay muted loop playsinline>
-                <source src="https://v16-webapp-prime.us.tiktok.com/video/tos/alisg/tos-alisg-pve-0037c001/o8AIEFIDbE9ffL3YfAQAeIA21mQzIfE7DIBgE/?a=1988&ch=0&cr=0&dr=0&lr=unwatermarked&cd=0|0|1|0&cv=1&br=2564&bt=1282&cs=0&ds=6&ft=4fUEKM8q8Zmo01x04_4jV~cWlpWrKsd.&mime_type=video_mp4&qs=0&rc=OTZlZTc3ZzVpPDw5aWZAZUBpM2Zoc3U5cm1sdTMzZjczM0AtLjItMmFhXjExNDE1YmNgYSNxLW1ecjRfLXNgLS1kMWNzcw%3D%3D&btag=e00090000&expire=1716380000&l=20240520&ply_type=2&policy=3&rt=W2" type="video/mp4">
-            </video>
+        <div class="logo-area">
+            <h1>✨ SANAP VIP ✨</h1>
+            <p>Bóc tách video TikTok không logo & đổi tên theo nội dung</p>
         </div>
 
         <div class="input-group">
-            <label>👉 Dán Link TikTok:</label>
+            <label>👉 Dán Link TikTok vào đây:</label>
             <input type="text" id="url" placeholder="https://www.tiktok.com/@...">
         </div>
 
         <div class="input-group">
-            <label>👉 Chọn định dạng:</label>
-            <select id="type">
-                <option value="mp4">🎬 Tải Video MP4 (Không Logo)</option>
-                <option value="mp3">🎵 Tải Nhạc Nền MP3 (Audio gốc)</option>
-            </select>
+            <label>👉 Chọn định dạng muốn tải:</label>
+            <div class="menu-grid">
+                <div class="menu-btn active" id="btn-mp4" onclick="selectType('mp4')">🎬 Video MP4<br><span style="font-size:10px; opacity:0.7;">Không logo id</span></div>
+                <div class="menu-btn" id="btn-mp3" onclick="selectType('mp3')">🎵 Nhạc MP3<br><span style="font-size:10px; opacity:0.7;">Audio gốc</span></div>
+            </div>
         </div>
 
-        <button onclick="processSanap()">🚀 BÓC TÁCH & TẢI VỀ</button>
+        <button class="btn-submit" onclick="processSanap()">🚀 BẮT ĐẦU TẢI NGAY</button>
         
-        <div class="loading" id="loading">⏳ Sanap đang xử lý hệ thống, chờ chút nha đại boss...</div>
-
-        <div class="result" id="resultBox">
-            <h3 id="resAuthor"></h3>
-            <p><b>Nội dung:</b> <span id="resTitle"></span></p>
-            <a id="downloadBtn" href="#" target="_blank" class="btn-action">📥 Bấm Tải Trực Tiếp Về Máy</a>
+        <!-- Khung hiển thị tiến trình -->
+        <div class="progress-box" id="progressBox">
+            <div class="progress-step" id="stepText">⏳ Đang khởi tạo hệ thống...</div>
+            <div class="media-info" id="mediaDetails"></div>
         </div>
 
-        <div class="footer">Created by ThienVN • Sanap Pro v8.0 Ultimate</div>
+        <div class="footer">Created by ThienVN • Sanap Pro Ultimate Edition</div>
     </div>
 
     <script>
+        let currentType = 'mp4';
+
+        function selectType(type) {
+            currentType = type;
+            if (type === 'mp4') {
+                document.getElementById('btn-mp4').classList.add('active');
+                document.getElementById('btn-mp3').classList.remove('active');
+            } else {
+                document.getElementById('btn-mp3').classList.add('active');
+                document.getElementById('btn-mp4').classList.remove('active');
+            }
+        }
+
         async function processSanap() {
             let url = document.getElementById('url').value.trim();
-            let type = document.getElementById('type').value;
-            let loading = document.getElementById('loading');
-            let resultBox = document.getElementById('resultBox');
+            let progressBox = document.getElementById('progressBox');
+            let stepText = document.getElementById('stepText');
+            let mediaDetails = document.getElementById('mediaDetails');
 
             if (!url) {
                 alert("Chưa nhập link kìa ông ơi!");
                 return;
             }
 
-            loading.style.display = 'block';
-            resultBox.style.display = 'none';
+            progressBox.style.display = 'block';
+            
+            // Bước 1: Đang kết nối
+            stepText.innerHTML = "🔗 Bước 1/3: Đang kết nối trạm trung chuyển...";
+            mediaDetails.innerHTML = "Đang xác thực đường dẫn TikTok...";
 
             try {
                 let response = await fetch('/api/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url, type: type })
+                    body: JSON.stringify({ url: url, type: currentType })
                 });
                 let data = await response.json();
-                
-                loading.style.display = 'none';
 
                 if (data.success) {
-                    document.getElementById('resAuthor').innerText = "✔ Tác giả: " + data.author;
-                    document.getElementById('resTitle').innerText = data.title;
-                    
-                    let btn = document.getElementById('downloadBtn');
-                    btn.href = data.download_url;
-                    btn.download = type === 'mp4' ? 'Sanap_Video.mp4' : 'Sanap_Audio.mp3';
-                    
-                    resultBox.style.display = 'block';
+                    // Bước 2: Bóc tách thành công
+                    stepText.innerHTML = "🔍 Bước 2/3: Đã bóc tách sạch logo ID!";
+                    mediaDetails.innerHTML = `<b>Tác giả:</b> ${data.author}<br><b>Tên nội dung:</b> ${data.title}`;
 
-                    // Tự động kích hoạt tải ngầm về thư mục Download của điện thoại
-                    let a = document.createElement('a');
-                    a.href = data.download_url;
-                    a.setAttribute('download', '');
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
+                    setTimeout(() => {
+                        // Bước 3: Tải file về máy với tên chuẩn theo nội dung
+                        stepText.innerHTML = "📥 Bước 3/3: Đang tự động tải file về máy...";
+                        
+                        let a = document.createElement('a');
+                        a.href = data.download_url;
+                        a.download = data.filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+
+                        setTimeout(() => {
+                            stepText.innerHTML = "🎉 Hoàn tất! Kiểm tra thư mục tải xuống nhé.";
+                        }, 1500);
+
+                    }, 1000);
 
                 } else {
-                    alert("❌ Lỗi: " + data.message);
+                    stepText.innerHTML = "❌ Lỗi xử lý!";
+                    mediaDetails.innerHTML = data.message;
                 }
             } catch (err) {
-                loading.style.display = 'none';
-                alert("❌ Lỗi kết nối máy chủ!");
+                stepText.innerHTML = "❌ Lỗi kết nối mạng!";
+                mediaDetails.innerHTML = "Không thể kết nối đến máy chủ xử lý.";
             }
         }
     </script>
 </body>
 </html>
 """
+
+def clean_filename(text):
+    # Lọc bỏ các ký tự đặc biệt không hợp lệ để đặt tên file
+    cleaned = re.sub(r'[\\/*?:"<>|]', "", text)
+    cleaned = cleaned.strip()
+    if len(cleaned) > 50:
+        cleaned = cleaned[:50]
+    return cleaned if cleaned else "Sanap_Media"
 
 @app.route('/')
 def index():
@@ -160,12 +179,17 @@ def api_download():
         if data.get("code") == 0:
             video_info = data.get("data", {})
             author = video_info.get("author", {}).get("nickname", "Unknown")
-            title = video_info.get("title", "tiktok_media")
+            raw_title = video_info.get("title", "tiktok_media")
             
+            # Làm sạch tiêu đề để làm tên file chuẩn theo nội dung video
+            safe_title = clean_filename(raw_title)
+
             if file_type == 'mp4':
                 download_url = video_info.get("hdplay") or video_info.get("play")
+                filename = f"{safe_title}.mp4"
             else:
                 download_url = video_info.get("music")
+                filename = f"{safe_title}.mp3"
 
             if not download_url:
                 return jsonify({'success': False, 'message': 'Không tìm thấy link tải từ máy chủ!'})
@@ -173,7 +197,8 @@ def api_download():
             return jsonify({
                 'success': True,
                 'author': author,
-                'title': title,
+                'title': raw_title,
+                'filename': filename,
                 'download_url': download_url
             })
         else:
