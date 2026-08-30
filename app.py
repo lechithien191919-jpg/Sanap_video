@@ -45,7 +45,7 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="logo-area">
             <h1>✨ SANAP VIP ✨</h1>
-            <p>Bóc tách video TikTok không logo & đổi tên theo nội dung</p>
+            <p>Bóc tách video TikTok không logo & tên chuẩn nội dung</p>
         </div>
 
         <div class="input-group">
@@ -73,7 +73,6 @@ HTML_TEMPLATE = """
     </div>
 
     <script>
-        // Mặc định chuẩn xác là mp4
         let currentType = 'mp4';
 
         function selectType(type) {
@@ -118,8 +117,8 @@ HTML_TEMPLATE = """
                     mediaDetails.innerHTML = `<b>Tác giả:</b> ${data.author}<br><b>Tên nội dung:</b> ${data.title}`;
 
                     setTimeout(() => {
-                        // Bước 3: Tải file về máy đúng định dạng người dùng chọn
-                        stepText.innerHTML = `📥 Bước 3/3: Đang tự động tải file ${data.ext.toUpperCase()} về máy...`;
+                        // Bước 3: Tải file về máy với tên chuẩn theo nội dung
+                        stepText.innerHTML = `📥 Bước 3/3: Đang tự động tải file "${data.filename}" về máy...`;
                         
                         let a = document.createElement('a');
                         a.href = data.download_url;
@@ -129,7 +128,7 @@ HTML_TEMPLATE = """
                         document.body.removeChild(a);
 
                         setTimeout(() => {
-                            stepText.innerHTML = "🎉 Hoàn tất! Kiểm tra thư mục tải xuống nhé ông ơi.";
+                            stepText.innerHTML = "🎉 Hoàn tất! Tên file đã được đặt theo tiêu đề video nhé ông ơi.";
                         }, 1500);
 
                     }, 1000);
@@ -149,10 +148,11 @@ HTML_TEMPLATE = """
 """
 
 def clean_filename(text):
+    # Loại bỏ các ký tự hệ thống không cho phép đặt tên file
     cleaned = re.sub(r'[\\/*?:"<>|]', "", text)
     cleaned = cleaned.strip()
-    if len(cleaned) > 50:
-        cleaned = cleaned[:50]
+    if len(cleaned) > 60:
+        cleaned = cleaned[:60]
     return cleaned if cleaned else "Sanap_Media"
 
 @app.route('/')
@@ -181,17 +181,16 @@ def api_download():
             author = video_info.get("author", {}).get("nickname", "Unknown")
             raw_title = video_info.get("title", "tiktok_media")
             
+            # Xử lý làm sạch tiêu đề để làm tên file chuẩn nội dung
             safe_title = clean_filename(raw_title)
 
-            # Phân tách chính xác định dạng MP4 hay MP3 theo yêu cầu
+            # Phân tách chính xác định dạng MP4 hay MP3 theo yêu cầu người dùng bấm
             if file_type == 'mp3':
                 download_url = video_info.get("music")
                 filename = f"{safe_title}.mp3"
-                ext = "mp3"
             else:
                 download_url = video_info.get("hdplay") or video_info.get("play")
                 filename = f"{safe_title}.mp4"
-                ext = "mp4"
 
             if not download_url:
                 return jsonify({'success': False, 'message': 'Không tìm thấy link tải từ máy chủ!'})
@@ -201,7 +200,6 @@ def api_download():
                 'author': author,
                 'title': raw_title,
                 'filename': filename,
-                'ext': ext,
                 'download_url': download_url
             })
         else:
@@ -212,4 +210,4 @@ def api_download():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-    
+            
