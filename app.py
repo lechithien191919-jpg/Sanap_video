@@ -11,7 +11,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SANAP VIP - Tải Video Đa Năng (TikTok, YouTube, Douyin)</title>
+    <title>SANAP VIP - Tải & Dịch Video Đa Năng</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { background: #090d16; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 15px; }
@@ -33,6 +33,10 @@ HTML_TEMPLATE = """
         .btn-submit { width: 100%; padding: 14px; background: linear-gradient(135deg, #0ea5e9, #2563eb); border: none; border-radius: 10px; color: white; font-size: 15px; font-weight: 700; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px rgba(14, 165, 233, 0.4); margin-top: 5px; }
         .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
 
+        /* Nút dịch AI chuyên biệt */
+        .btn-ai-translate { display: block; width: 100%; padding: 13px; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: white; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 700; text-align: center; margin-top: 10px; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); transition: 0.2s; }
+        .btn-ai-translate:hover { opacity: 0.95; transform: translateY(-1px); }
+
         /* Khung hiển thị tiến trình */
         .progress-box { margin-top: 20px; background: #090d16; padding: 15px; border-radius: 12px; border: 1px solid #1e293b; text-align: left; display: none; }
         .progress-step { font-size: 12px; color: #38bdf8; margin-bottom: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
@@ -45,12 +49,12 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="logo-area">
             <h1>✨ SANAP MULTI VIP ✨</h1>
-            <p>Hỗ trợ TikTok, YouTube & Douyin không logo</p>
+            <p>Tải video TikTok, YouTube, Douyin, Bilibili & Dịch AI</p>
         </div>
 
         <div class="input-group">
             <label>👉 Dán Link Video vào đây:</label>
-            <input type="text" id="url" placeholder="TikTok, YouTube hoặc Douyin...">
+            <input type="text" id="url" placeholder="TikTok, YouTube, Douyin, Bilibili...">
         </div>
 
         <div class="input-group">
@@ -62,6 +66,9 @@ HTML_TEMPLATE = """
         </div>
 
         <button class="btn-submit" onclick="processSanap()">🚀 BẮT ĐẦU TẢI NGAY</button>
+        
+        <!-- Nút Dịch AI dẫn trực tiếp tới Google Colab của ông -->
+        <a href="https://colab.research.google.com/drive/18XnNfvmsT2nCr434x1HbcJGYJva3LGW5#scrollTo=S6HrhgrS9GgO" target="_blank" class="btn-ai-translate">🤖 DỊCH AI TIẾNG VIỆT (COLAB)</a>
         
         <!-- Khung hiển thị tiến trình -->
         <div class="progress-box" id="progressBox">
@@ -100,7 +107,7 @@ HTML_TEMPLATE = """
             progressBox.style.display = 'block';
             
             stepText.innerHTML = "🔗 Bước 1/3: Đang kết nối trạm trung chuyển đa năng...";
-            mediaDetails.innerHTML = "Đang nhận diện nguồn video...";
+            mediaDetails.innerHTML = "Đang nhận diện nguồn video từ các nền tảng...";
 
             try {
                 let response = await fetch('/api/download', {
@@ -154,7 +161,6 @@ def api_download():
     url = req_data.get('url')
     file_type = req_data.get('type')
 
-    # Sử dụng Cobalt API (hoặc dịch vụ hỗ trợ đa nền tảng tối ưu cho TikTok, YouTube, Douyin)
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -168,7 +174,6 @@ def api_download():
     }
 
     try:
-        # Gọi trạm trung chuyển API tổng hợp đa nền tảng công khai ổn định
         response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=15)
         res_data = response.json()
 
@@ -177,23 +182,24 @@ def api_download():
         if status in ["stream", "redirect", "picker"]:
             download_url = res_data.get("url")
             
-            # Nếu trả về dạng chọn nhiều phân vùng (picker)
             if status == "picker" and res_data.get("picker"):
                 download_url = res_data["picker"][0].get("url")
 
-            random_id = ''.join([str(random.randint(0, 9)) for _ in range(10)] )
+            random_id = ''.join([str(random.randint(0, 9)) for _ in range(10)])
             ext = "mp3" if file_type == 'mp3' else "mp4"
             filename = f"sanap_{random_id}.{ext}"
             
-            # Nhận diện nền tảng dựa vào link
+            # Nhận diện nền tảng
             platform = "TikTok / Douyin"
             if "youtube.com" in url or "youtu.be" in url:
                 platform = "YouTube"
             elif "douyin.com" in url:
                 platform = "Douyin"
+            elif "bilibili.com" in url or "b23.tv" in url:
+                platform = "Bilibili"
 
             if not download_url:
-                return jsonify({'success': False, 'message': 'Không tìm thấy liên kết tải trực tiếp!'})
+                return jsonify({'success': False, 'message': 'Không tìm thấy liên kết tải trực tiếp từ máy chủ!'})
 
             return jsonify({
                 'success': True,
@@ -203,8 +209,7 @@ def api_download():
                 'download_url': download_url
             })
         else:
-            # Fallback nếu link không hợp lệ
-            return jsonify({'success': False, 'message': res_data.get('text', 'Đường dẫn không hợp lệ hoặc không hỗ trợ!')})
+            return jsonify({'success': False, 'message': res_data.get('text', 'Đường dẫn không hợp lệ hoặc nền tảng chưa được hỗ trợ!')})
             
     except Exception as e:
         return jsonify({'success': False, 'message': f'Lỗi hệ thống: ' + str(e)})
