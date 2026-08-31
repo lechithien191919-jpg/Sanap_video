@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = 'sanap_secret_key_super_secure'
 
 # Kết nối Neon Database
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = "postgresql://neondb_owner:npg_aVetujfAE0v3@ep-weathered-pine-axxluidk-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 
 def get_db_connection():
     try:
@@ -240,8 +240,7 @@ def admin_stats():
     if not session.get('is_admin'):
         error = None
         if request.method == 'POST':
-            # Mật khẩu mặc định là "123456", ông có thể đổi tùy ý ở đây nhé
-            if request.form.get('password') == '123456':
+            if request.form.get('password') == '123456': # Mật khẩu xem thống kê
                 session['is_admin'] = True
                 return redirect(url_for('admin_stats'))
             else:
@@ -265,22 +264,22 @@ def api_download():
 
     headers = {
         'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0'
     }
     
-    # Gửi yêu cầu qua Cobalt API (Hỗ trợ vô số nền tảng: YouTube, TikTok, FB, IG, Bilibili...)
     payload = {
         "url": url
     }
 
-    # Tùy chỉnh chất lượng theo lựa chọn của người dùng
     if file_type == 'mp3':
         payload["downloadMode"] = "audio"
     elif file_type == 'mp4_sd':
-        payload["videoQuality"] = "480" # Hoặc mức chất lượng vừa phải
+        payload["videoQuality"] = "480"
 
     try:
-        response = requests.post("https://co.wuk.sh/api/json", json=payload, headers=headers)
+        # Sử dụng API Cobalt mới và chính thức nhất
+        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers)
         res_data = response.json()
 
         status = res_data.get('status')
@@ -291,15 +290,13 @@ def api_download():
         if status == 'redirect' or status == 'tunnel':
             download_url = res_data.get('url')
         elif status == 'picker':
-            # Lấy link đầu tiên từ danh sách đa phương tiện
             picker_items = res_data.get('picker', [])
             if picker_items:
                 download_url = picker_items[0].get('url')
 
         if not download_url:
-            return jsonify({'success': False, 'message': 'Không tìm thấy liên kết tải trực tiếp từ máy chủ!'})
+            return jsonify({'success': False, 'message': 'Không tìm thấy liên kết tải từ máy chủ!'})
 
-        # Đổi tên file theo ý người dùng
         ext = "mp3" if file_type == 'mp3' else "mp4"
         final_filename = f"{custom_name}.{ext}"
 
@@ -318,4 +315,4 @@ def api_download():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-        
+    
