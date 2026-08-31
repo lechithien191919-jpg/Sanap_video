@@ -39,7 +39,7 @@ def increment_downloads():
     cur.close()
     conn.close()
 
-# Giao diện chính tích hợp tự động mở rộng link rút gọn ngay trên trình duyệt
+# Giao diện chính
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="vi">
@@ -118,50 +118,32 @@ HTML_TEMPLATE = """
         }
 
         async function processSanap() {
-            let urlInput = document.getElementById('url').value.trim();
+            let url = document.getElementById('url').value.trim();
             let customName = document.getElementById('customName').value.trim() || "sanap_file";
             let progressBox = document.getElementById('progressBox');
             let stepText = document.getElementById('stepText');
             let mediaDetails = document.getElementById('mediaDetails');
 
-            if (!urlInput) {
+            if (!url) {
                 alert("⚠️ Ông chưa nhập link kìa!");
                 return;
             }
 
             progressBox.style.display = 'block';
-            stepText.innerHTML = "🔗 Bước 1/3: Đang phân giải liên kết...";
-            mediaDetails.innerHTML = "Đang kiểm tra và xử lý đường dẫn...";
-
-            let finalUrl = urlInput;
-            
-            // Nếu là link rút gọn, tự động mở rộng ở phía trình duyệt để tránh bị chặn IP server
-            if (urlInput.includes("vt.tiktok.com") || urlInput.includes("vm.tiktok.com") || urlInput.includes("youtu.be")) {
-                try {
-                    let res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(urlInput)}`);
-                    let data = await res.json();
-                    if (data && data.status && data.status.url) {
-                        finalUrl = data.status.url;
-                    }
-                } catch (e) {
-                    console.log("Không thể giải mã tự động, dùng link gốc:", e);
-                }
-            }
-
-            stepText.innerHTML = "🔗 Bước 2/3: Đang kết nối trạm trung chuyển đa năng...";
-            mediaDetails.innerHTML = `Đang gửi yêu cầu xử lý link...`;
+            stepText.innerHTML = "🔗 Bước 1/3: Đang kết nối trạm trung chuyển đa năng...";
+            mediaDetails.innerHTML = "Đang nhận diện nguồn video từ các nền tảng...";
 
             try {
                 let response = await fetch('/api/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: finalUrl, type: currentType, custom_name: customName })
+                    body: JSON.stringify({ url: url, type: currentType, custom_name: customName })
                 });
 
                 let data = await response.json();
 
                 if (data.success) {
-                    stepText.innerHTML = "✅ Lấy dữ liệu thành công!";
+                    stepText.innerHTML = "✅ Bước 2/3: Lấy dữ liệu thành công!";
                     mediaDetails.innerHTML = `<b>Nền tảng:</b> ${data.platform}<br><b>Tiêu đề:</b> ${data.title}`;
 
                     setTimeout(() => {
@@ -283,20 +265,21 @@ def api_download():
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
     }
     
     payload = {
-        "url": url
+        "url": url,
+        "vQuality": "720"
     }
 
     if file_type == 'mp3':
         payload["audioOnly"] = True
     elif file_type == 'mp4_sd':
-        payload["videoQuality"] = "480"
+        payload["vQuality"] = "480"
 
     try:
-        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers)
+        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=10)
         res_data = response.json()
 
         status = res_data.get('status')
@@ -304,7 +287,7 @@ def api_download():
         title = res_data.get('filename', 'Video_Sanap')
         platform = "Đa nền tảng (Cobalt)"
 
-        if status == 'redirect' or status == 'tunnel':
+        if status in ['redirect', 'tunnel']:
             download_url = res_data.get('url')
         elif status == 'picker':
             picker_items = res_data.get('picker', [])
@@ -312,7 +295,7 @@ def api_download():
                 download_url = picker_items[0].get('url')
 
         if not download_url:
-            return jsonify({'success': False, 'message': f'Không tìm thấy link tải (Trạng thái API: {status})'})
+            return jsonify({'success': False, 'message': f'Trạm trung chuyển đang bận (Status: {status}). Ông hãy thử lại bằng link TikTok đầy đủ nhé!'})
 
         ext = "mp3" if file_type == 'mp3' else "mp4"
         final_filename = f"{custom_name}.{ext}"
@@ -328,8 +311,8 @@ def api_download():
         })
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Lỗi kết nối trạm: {str(e)}'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-                
+        
