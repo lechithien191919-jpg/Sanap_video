@@ -265,20 +265,21 @@ def api_download():
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Origin': 'https://co.wuk.sh'
     }
     
     payload = {
-        "url": url
+        "url": url,
+        "vQuality": "max"
     }
 
     if file_type == 'mp3':
         payload["downloadMode"] = "audio"
     elif file_type == 'mp4_sd':
-        payload["videoQuality"] = "480"
+        payload["vQuality"] = "480"
 
     try:
-        # Sử dụng API Cobalt mới và chính thức nhất
         response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers)
         res_data = response.json()
 
@@ -295,7 +296,7 @@ def api_download():
                 download_url = picker_items[0].get('url')
 
         if not download_url:
-            return jsonify({'success': False, 'message': 'Không tìm thấy liên kết tải từ máy chủ!'})
+            return jsonify({'success': False, 'message': f'Không tìm thấy link tải (Trạng thái API: {status})'})
 
         ext = "mp3" if file_type == 'mp3' else "mp4"
         final_filename = f"{custom_name}.{ext}"
@@ -315,4 +316,4 @@ def api_download():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-    
+                
