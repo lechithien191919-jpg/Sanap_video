@@ -265,19 +265,18 @@ def api_download():
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Origin': 'https://co.wuk.sh'
+        'User-Agent': 'Mozilla/5.0'
     }
     
+    # Cấu trúc payload chuẩn mới nhất của Cobalt API
     payload = {
-        "url": url,
-        "vQuality": "max"
+        "url": url
     }
 
     if file_type == 'mp3':
-        payload["downloadMode"] = "audio"
+        payload["audioOnly"] = True
     elif file_type == 'mp4_sd':
-        payload["vQuality"] = "480"
+        payload["videoQuality"] = "480"
 
     try:
         response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers)
@@ -316,4 +315,4 @@ def api_download():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-                
+    
