@@ -283,52 +283,69 @@ def api_download():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
     }
     
-    # Payload chuẩn chỉnh của Cobalt API, tự động không logo đối với TikTok
+    # Cập nhật chuẩn tham số videoQuality theo tài liệu API mới nhất của Cobalt
     payload = {
         "url": url,
-        "vQuality": "720"
+        "videoQuality": "720"
     }
 
     if file_type == 'mp3':
-        payload["audioOnly"] = True
+        payload["audioFormat"] = "mp3"
+        payload["downloadMode"] = "audio"
     elif file_type == 'mp4_sd':
-        payload["vQuality"] = "480"
+        payload["videoQuality"] = "480"
 
-    try:
-        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=12)
-        res_data = response.json()
+    # Danh sách trạm dự phòng để gọi API luôn mượt mà không bị lỗi
+    api_endpoints = [
+        "https://co.wuk.sh/api/json",
+        "https://api.cobalt.tools/api/json",
+        "https://cobalt.api.kwiatekmiki.pl/api/json"
+    ]
 
-        status = res_data.get('status')
-        download_url = None
-        title = res_data.get('filename', 'Video_Sanap')
-        platform = "Đa nền tảng (Sanap Engine)"
+    res_data = None
+    status = "error"
 
-        if status in ['redirect', 'tunnel']:
-            download_url = res_data.get('url')
-        elif status == 'picker':
-            picker_items = res_data.get('picker', [])
-            if picker_items:
-                download_url = picker_items[0].get('url')
+    for endpoint in api_endpoints:
+        try:
+            response = requests.post(endpoint, json=payload, headers=headers, timeout=10)
+            if response.status_code == 200:
+                res_data = response.json()
+                status = res_data.get('status')
+                if status in ['redirect', 'tunnel', 'picker']:
+                    break
+        except Exception:
+            continue
 
-        if not download_url:
-            return jsonify({'success': False, 'message': f'Không tìm thấy link tải (Trạng thái API: {status})'})
+    if not res_data or status not in ['redirect', 'tunnel', 'picker']:
+        return jsonify({'success': False, 'message': f'Không tìm thấy link tải (Trạng thái API: {status})'})
 
-        ext = "mp3" if file_type == 'mp3' else "mp4"
-        final_filename = f"{custom_name}.{ext}"
+    download_url = None
+    title = res_data.get('filename', 'Video_Sanap')
+    platform = "Đa nền tảng (Sanap Engine)"
 
-        increment_downloads()
+    if status in ['redirect', 'tunnel']:
+        download_url = res_data.get('url')
+    elif status == 'picker':
+        picker_items = res_data.get('picker', [])
+        if picker_items:
+            download_url = picker_items[0].get('url')
 
-        return jsonify({
-            'success': True,
-            'download_url': download_url,
-            'title': title,
-            'filename': final_filename,
-            'platform': platform
-        })
+    if not download_url:
+        return jsonify({'success': False, 'message': 'Không trích xuất được đường dẫn tải về.'})
 
-    except Exception as e:
-        return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'})
+    ext = "mp3" if file_type == 'mp3' else "mp4"
+    final_filename = f"{custom_name}.{ext}"
+
+    increment_downloads()
+
+    return jsonify({
+        'success': True,
+        'download_url': download_url,
+        'title': title,
+        'filename': final_filename,
+        'platform': platform
+    })
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-        
+            
