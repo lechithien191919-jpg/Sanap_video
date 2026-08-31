@@ -39,7 +39,7 @@ def increment_downloads():
     cur.close()
     conn.close()
 
-# Giao diện chính
+# Giao diện chính giữ nguyên phong cách ban đầu
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="vi">
@@ -74,11 +74,11 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="logo-area">
             <h1>✨ SANAP MULTI VIP ✨</h1>
-            <p>Tải đa nền tảng & Chọn chất lượng tùy ý 🚀</p>
+            <p>Tải không logo & Chọn chất lượng tùy ý 🚀</p>
         </div>
 
         <div class="input-group">
-            <label>🔗 Dán liên kết (TikTok, YouTube, FB, IG, Bilibili...)</label>
+            <label>🔗 Dán liên kết (TikTok Không Logo, YouTube, FB...)</label>
             <input type="text" id="url" placeholder="Nhập link video vào đây...">
         </div>
 
@@ -118,32 +118,48 @@ HTML_TEMPLATE = """
         }
 
         async function processSanap() {
-            let url = document.getElementById('url').value.trim();
+            let rawUrl = document.getElementById('url').value.trim();
             let customName = document.getElementById('customName').value.trim() || "sanap_file";
             let progressBox = document.getElementById('progressBox');
             let stepText = document.getElementById('stepText');
             let mediaDetails = document.getElementById('mediaDetails');
 
-            if (!url) {
+            if (!rawUrl) {
                 alert("⚠️ Ông chưa nhập link kìa!");
                 return;
             }
 
             progressBox.style.display = 'block';
-            stepText.innerHTML = "🔗 Bước 1/3: Đang kết nối trạm trung chuyển đa năng...";
-            mediaDetails.innerHTML = "Đang nhận diện nguồn video từ các nền tảng...";
+            stepText.innerHTML = "🔗 Bước 1/3: Đang xử lý đường dẫn...";
+            mediaDetails.innerHTML = "Đang kiểm tra liên kết...";
+
+            let finalUrl = rawUrl;
+            if (rawUrl.includes("vt.tiktok.com") || rawUrl.includes("vm.tiktok.com")) {
+                try {
+                    let expandRes = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rawUrl)}`);
+                    let expandData = await expandRes.json();
+                    if (expandData && expandData.status && expandData.status.url) {
+                        finalUrl = expandData.status.url;
+                    }
+                } catch (e) {
+                    console.log("Dùng link trực tiếp");
+                }
+            }
+
+            stepText.innerHTML = "🔗 Bước 2/3: Đang bóc tách video không logo...";
+            mediaDetails.innerHTML = "Đang gửi yêu cầu đến trạm xử lý...";
 
             try {
                 let response = await fetch('/api/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url, type: currentType, custom_name: customName })
+                    body: JSON.stringify({ url: finalUrl, type: currentType, custom_name: customName })
                 });
 
                 let data = await response.json();
 
                 if (data.success) {
-                    stepText.innerHTML = "✅ Bước 2/3: Lấy dữ liệu thành công!";
+                    stepText.innerHTML = "✅ Lấy dữ liệu thành công!";
                     mediaDetails.innerHTML = `<b>Nền tảng:</b> ${data.platform}<br><b>Tiêu đề:</b> ${data.title}`;
 
                     setTimeout(() => {
@@ -240,7 +256,7 @@ def admin_stats():
     if not session.get('is_admin'):
         error = None
         if request.method == 'POST':
-            if request.form.get('password') == '123456': # Mật khẩu xem thống kê
+            if request.form.get('password') == '123456':
                 session['is_admin'] = True
                 return redirect(url_for('admin_stats'))
             else:
@@ -254,10 +270,9 @@ def admin_stats():
 def api_download():
     req_data = request.json
     url = req_data.get('url')
-    file_type = req_data.get('type', 'mp4') # mp4, mp4_sd, mp3
+    file_type = req_data.get('type', 'mp4')
     custom_name = req_data.get('custom_name', 'sanap_file')
 
-    # Làm sạch tên file
     custom_name = "".join(c for c in custom_name if c.isalnum() or c in (' ', '_', '-')).strip()
     if not custom_name:
         custom_name = "sanap_file"
@@ -268,9 +283,11 @@ def api_download():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
     }
     
+    # Cấu hình bóc tách video chuẩn không logo (No Watermark)
     payload = {
         "url": url,
-        "vQuality": "720"
+        "vQuality": "720",
+        "removeWatermark": True
     }
 
     if file_type == 'mp3':
@@ -279,13 +296,13 @@ def api_download():
         payload["vQuality"] = "480"
 
     try:
-        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=10)
+        response = requests.post("https://api.cobalt.tools/api/json", json=payload, headers=headers, timeout=12)
         res_data = response.json()
 
         status = res_data.get('status')
         download_url = None
         title = res_data.get('filename', 'Video_Sanap')
-        platform = "Đa nền tảng (Cobalt)"
+        platform = "Đa nền tảng (Bóc tách Không Logo)"
 
         if status in ['redirect', 'tunnel']:
             download_url = res_data.get('url')
@@ -295,7 +312,7 @@ def api_download():
                 download_url = picker_items[0].get('url')
 
         if not download_url:
-            return jsonify({'success': False, 'message': f'Trạm trung chuyển đang bận (Status: {status}). Ông hãy thử lại bằng link TikTok đầy đủ nhé!'})
+            return jsonify({'success': False, 'message': f'Không tìm thấy link tải (Trạng thái API: {status})'})
 
         ext = "mp3" if file_type == 'mp3' else "mp4"
         final_filename = f"{custom_name}.{ext}"
@@ -311,8 +328,8 @@ def api_download():
         })
 
     except Exception as e:
-        return jsonify({'success': False, 'message': f'Lỗi kết nối trạm: {str(e)}'})
+        return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-        
+                
