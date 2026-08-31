@@ -262,13 +262,20 @@ def api_download():
     if not custom_name:
         custom_name = "sanap_file"
 
+    # Tự động giải mã link rút gọn (vt.tiktok.com, vm.tiktok.com, youtu.be...) thành link đầy đủ
+    if url and ("vt.tiktok.com" in url or "vm.tiktok.com" in url or "youtu.be" in url):
+        try:
+            r = requests.head(url, allow_redirects=True, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
+            url = r.url
+        except Exception as e:
+            print("Không thể giải mã link rút gọn:", e)
+
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0'
     }
     
-    # Cấu trúc payload chuẩn mới nhất của Cobalt API
     payload = {
         "url": url
     }
@@ -315,4 +322,4 @@ def api_download():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-    
+        
