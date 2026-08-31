@@ -74,11 +74,11 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="logo-area">
             <h1>✨ SANAP MULTI VIP ✨</h1>
-            <p>Tải đa nền tảng & Chọn chất lượng tùy ý 🚀</p>
+            <p>Tải không logo & Chọn chất lượng tùy ý 🚀</p>
         </div>
 
         <div class="input-group">
-            <label>🔗 Dán liên kết (TikTok, YouTube, FB...)</label>
+            <label>🔗 Dán liên kết (TikTok Không Logo, YouTube, FB...)</label>
             <input type="text" id="url" placeholder="Nhập link video vào đây...">
         </div>
 
@@ -146,8 +146,8 @@ HTML_TEMPLATE = """
                 }
             }
 
-            stepText.innerHTML = "🔗 Bước 2/3: Đang kết nối trạm trung chuyển...";
-            mediaDetails.innerHTML = "Đang gửi yêu cầu xử lý...";
+            stepText.innerHTML = "🔗 Bước 2/3: Đang bóc tách video không logo...";
+            mediaDetails.innerHTML = "Đang gửi yêu cầu đến máy chủ...";
 
             try {
                 let response = await fetch('/api/download', {
@@ -278,74 +278,73 @@ def api_download():
         custom_name = "sanap_file"
 
     headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+        'Accept': 'application/json'
     }
-    
-    # Cập nhật chuẩn tham số videoQuality theo tài liệu API mới nhất của Cobalt
-    payload = {
-        "url": url,
-        "videoQuality": "720"
-    }
-
-    if file_type == 'mp3':
-        payload["audioFormat"] = "mp3"
-        payload["downloadMode"] = "audio"
-    elif file_type == 'mp4_sd':
-        payload["videoQuality"] = "480"
-
-    # Danh sách trạm dự phòng để gọi API luôn mượt mà không bị lỗi
-    api_endpoints = [
-        "https://co.wuk.sh/api/json",
-        "https://api.cobalt.tools/api/json",
-        "https://cobalt.api.kwiatekmiki.pl/api/json"
-    ]
-
-    res_data = None
-    status = "error"
-
-    for endpoint in api_endpoints:
-        try:
-            response = requests.post(endpoint, json=payload, headers=headers, timeout=10)
-            if response.status_code == 200:
-                res_data = response.json()
-                status = res_data.get('status')
-                if status in ['redirect', 'tunnel', 'picker']:
-                    break
-        except Exception:
-            continue
-
-    if not res_data or status not in ['redirect', 'tunnel', 'picker']:
-        return jsonify({'success': False, 'message': f'Không tìm thấy link tải (Trạng thái API: {status})'})
 
     download_url = None
-    title = res_data.get('filename', 'Video_Sanap')
+    title = "Video_Sanap"
     platform = "Đa nền tảng (Sanap Engine)"
 
-    if status in ['redirect', 'tunnel']:
-        download_url = res_data.get('url')
-    elif status == 'picker':
-        picker_items = res_data.get('picker', [])
-        if picker_items:
-            download_url = picker_items[0].get('url')
+    try:
+        # Sử dụng API bóc tách trực tiếp cực kỳ ổn định không lo chết trạm
+        api_url = f"https://tikwm.com/api/?url={url}"
+        response = requests.get(api_url, headers=headers, timeout=12)
+        res_data = response.json()
 
-    if not download_url:
-        return jsonify({'success': False, 'message': 'Không trích xuất được đường dẫn tải về.'})
+        if res_data.get('code') == 0 and 'data' in res_data:
+            item = res_data['data']
+            title = item.get('title', 'Video_TikTok')
+            platform = "TikTok (Không Logo)"
 
-    ext = "mp3" if file_type == 'mp3' else "mp4"
-    final_filename = f"{custom_name}.{ext}"
+            if file_type == 'mp3':
+                download_url = item.get('music')
+                if not download_url:
+                    download_url = item.get('play')
+            else:
+                # Mặc định lấy bản không logo (hdplay hoặc play)
+                download_url = item.get('hdplay')
+                if not download_url:
+                    download_url = item.get('play')
+        else:
+            # Fallback sang phương án dự phòng nếu link không phải TikTok thuần
+            payload = {
+                "url": url,
+                "videoQuality": "720"
+            }
+            if file_type == 'mp3':
+                payload["downloadMode"] = "audio"
+            
+            fb_res = requests.post("https://co.wuk.sh/api/json", json=payload, headers={'Content-Type': 'application/json', 'Accept': 'application/json'}, timeout=10)
+            fb_data = fb_res.json()
+            if fb_data.get('status') in ['redirect', 'tunnel']:
+                download_url = fb_data.get('url')
+                title = fb_data.get('filename', 'Video_Sanap')
+                platform = "Đa nền tảng (Cobalt Pro)"
+            elif fb_data.get('status') == 'picker':
+                picker = fb_data.get('picker', [])
+                if picker:
+                    download_url = picker[0].get('url')
 
-    increment_downloads()
+        if not download_url:
+            return jsonify({'success': False, 'message': 'Không thể trích xuất link tải từ hệ thống.'})
 
-    return jsonify({
-        'success': True,
-        'download_url': download_url,
-        'title': title,
-        'filename': final_filename,
-        'platform': platform
-    })
+        ext = "mp3" if file_type == 'mp3' else "mp4"
+        final_filename = f"{custom_name}.{ext}"
+
+        increment_downloads()
+
+        return jsonify({
+            'success': True,
+            'download_url': download_url,
+            'title': title,
+            'filename': final_filename,
+            'platform': platform
+        })
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': f'Lỗi hệ thống: {str(e)}'})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-            
+                
