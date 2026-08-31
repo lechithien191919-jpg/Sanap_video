@@ -39,7 +39,7 @@ def increment_downloads():
     cur.close()
     conn.close()
 
-# Giao diện chính có chọn chất lượng và mở rộng nền tảng
+# Giao diện chính tích hợp tự động mở rộng link rút gọn ngay trên trình duyệt
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="vi">
@@ -118,32 +118,50 @@ HTML_TEMPLATE = """
         }
 
         async function processSanap() {
-            let url = document.getElementById('url').value.trim();
+            let urlInput = document.getElementById('url').value.trim();
             let customName = document.getElementById('customName').value.trim() || "sanap_file";
             let progressBox = document.getElementById('progressBox');
             let stepText = document.getElementById('stepText');
             let mediaDetails = document.getElementById('mediaDetails');
 
-            if (!url) {
+            if (!urlInput) {
                 alert("⚠️ Ông chưa nhập link kìa!");
                 return;
             }
 
             progressBox.style.display = 'block';
-            stepText.innerHTML = "🔗 Bước 1/3: Đang kết nối trạm trung chuyển đa năng...";
-            mediaDetails.innerHTML = "Đang nhận diện nguồn video từ các nền tảng...";
+            stepText.innerHTML = "🔗 Bước 1/3: Đang phân giải liên kết...";
+            mediaDetails.innerHTML = "Đang kiểm tra và xử lý đường dẫn...";
+
+            let finalUrl = urlInput;
+            
+            // Nếu là link rút gọn, tự động mở rộng ở phía trình duyệt để tránh bị chặn IP server
+            if (urlInput.includes("vt.tiktok.com") || urlInput.includes("vm.tiktok.com") || urlInput.includes("youtu.be")) {
+                try {
+                    let res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(urlInput)}`);
+                    let data = await res.json();
+                    if (data && data.status && data.status.url) {
+                        finalUrl = data.status.url;
+                    }
+                } catch (e) {
+                    console.log("Không thể giải mã tự động, dùng link gốc:", e);
+                }
+            }
+
+            stepText.innerHTML = "🔗 Bước 2/3: Đang kết nối trạm trung chuyển đa năng...";
+            mediaDetails.innerHTML = `Đang gửi yêu cầu xử lý link...`;
 
             try {
                 let response = await fetch('/api/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: url, type: currentType, custom_name: customName })
+                    body: JSON.stringify({ url: finalUrl, type: currentType, custom_name: customName })
                 });
 
                 let data = await response.json();
 
                 if (data.success) {
-                    stepText.innerHTML = "✅ Bước 2/3: Lấy dữ liệu thành công!";
+                    stepText.innerHTML = "✅ Lấy dữ liệu thành công!";
                     mediaDetails.innerHTML = `<b>Nền tảng:</b> ${data.platform}<br><b>Tiêu đề:</b> ${data.title}`;
 
                     setTimeout(() => {
@@ -262,14 +280,6 @@ def api_download():
     if not custom_name:
         custom_name = "sanap_file"
 
-    # Tự động giải mã link rút gọn (vt.tiktok.com, vm.tiktok.com, youtu.be...) thành link đầy đủ
-    if url and ("vt.tiktok.com" in url or "vm.tiktok.com" in url or "youtu.be" in url):
-        try:
-            r = requests.head(url, allow_redirects=True, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
-            url = r.url
-        except Exception as e:
-            print("Không thể giải mã link rút gọn:", e)
-
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -322,4 +332,4 @@ def api_download():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-        
+                
