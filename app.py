@@ -39,7 +39,7 @@ def increment_downloads():
     cur.close()
     conn.close()
 
-# Giao diện chính giữ nguyên phong cách ban đầu
+# Giao diện chính hoàn chỉnh, giữ nguyên phong cách ban đầu
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="vi">
@@ -74,11 +74,11 @@ HTML_TEMPLATE = """
     <div class="container">
         <div class="logo-area">
             <h1>✨ SANAP MULTI VIP ✨</h1>
-            <p>Tải không logo & Chọn chất lượng tùy ý 🚀</p>
+            <p>Tải đa nền tảng & Chọn chất lượng tùy ý 🚀</p>
         </div>
 
         <div class="input-group">
-            <label>🔗 Dán liên kết (TikTok Không Logo, YouTube, FB...)</label>
+            <label>🔗 Dán liên kết (TikTok, YouTube, FB...)</label>
             <input type="text" id="url" placeholder="Nhập link video vào đây...">
         </div>
 
@@ -146,8 +146,8 @@ HTML_TEMPLATE = """
                 }
             }
 
-            stepText.innerHTML = "🔗 Bước 2/3: Đang bóc tách video không logo...";
-            mediaDetails.innerHTML = "Đang gửi yêu cầu đến trạm xử lý...";
+            stepText.innerHTML = "🔗 Bước 2/3: Đang kết nối trạm trung chuyển...";
+            mediaDetails.innerHTML = "Đang gửi yêu cầu xử lý...";
 
             try {
                 let response = await fetch('/api/download', {
@@ -283,11 +283,10 @@ def api_download():
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
     }
     
-    # Cấu hình bóc tách video chuẩn không logo (No Watermark)
+    # Payload chuẩn chỉnh của Cobalt API, tự động không logo đối với TikTok
     payload = {
         "url": url,
-        "vQuality": "720",
-        "removeWatermark": True
+        "vQuality": "720"
     }
 
     if file_type == 'mp3':
@@ -302,7 +301,7 @@ def api_download():
         status = res_data.get('status')
         download_url = None
         title = res_data.get('filename', 'Video_Sanap')
-        platform = "Đa nền tảng (Bóc tách Không Logo)"
+        platform = "Đa nền tảng (Sanap Engine)"
 
         if status in ['redirect', 'tunnel']:
             download_url = res_data.get('url')
@@ -332,4 +331,4 @@ def api_download():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-                
+        
